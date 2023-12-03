@@ -122,12 +122,10 @@ p_field_history = []
 p_field_pred_history = []
 u_norm_history = []
 u_norm_pred_history = []
-ux_loss_history = []
-uy_loss_history = []
-f_ux_loss_history = []
-f_uy_loss_history = []
+loss_history = []
+epochs_per_frame = 100
 
-fig, ax = plt.subplots(2, 2)
+fig, ax = plt.subplots(3, 2, figsize=(10, 10))
 u_pred_plot = ax[0][0].imshow(u_norm)  # u_norm_pred
 ax[0][0].set_title('predicted velocity at t=0')
 p_pred_plot = ax[1][0].imshow(p_field)  # p_field_pred
@@ -136,9 +134,13 @@ u_actual_plot = ax[0][1].imshow(u_norm)
 ax[0][1].set_title('actual velocity at t=0')
 p_actual_plot = ax[1][1].imshow(p_field)
 ax[1][1].set_title('actual pressure at t=0')
-plt.ion()
+loss_plot, = ax[2][0].plot(loss_history)
+ax[2][0].set_yscale('log')
+ax[2][0].set_title('loss')
+ax[2][0].set_xlabel('epochs')
+ax[2][0].set_ylabel('loss')
 
-def update_plot(p_field, p_field_pred, u_norm, u_norm_pred):
+def update_plot(p_field, p_field_pred, u_norm, u_norm_pred, loss, plot=False):
     p_field_history.append(p_field)
     p_field_pred_history.append(p_field_pred)
     u_norm_history.append(u_norm)
@@ -148,14 +150,23 @@ def update_plot(p_field, p_field_pred, u_norm, u_norm_pred):
     p_pred_plot.set_data(p_field_pred)
     u_actual_plot.set_data(u_norm)
     p_actual_plot.set_data(p_field)
-    fig.canvas.draw()
-    plt.pause(0.1)
+
+    loss_history.append(loss)
+
+    if plot:
+        loss_plot.set_data(epochs_per_frame * np.arange(0, len(loss_history)), loss_history)
+        ax[2][0].set_xlim(0, epochs_per_frame * len(loss_history))
+        ax[2][0].set_ylim(min(loss_history), max(loss_history))
+        fig.suptitle('epochs=' + str(len(p_field_history) * epochs_per_frame))
+        fig.canvas.draw()
+        plt.pause(0.01)
 
 def init():
     u_pred_plot.set_data(u_norm_pred_history[0])
     p_pred_plot.set_data(p_field_pred_history[0])
     u_actual_plot.set_data(u_norm_history[0])
     p_actual_plot.set_data(p_field_history[0])
+    loss_plot.set_data(epochs_per_frame * np.arange(0, len(loss_history)), loss_history)
     return u_pred_plot, u_actual_plot, p_pred_plot, p_actual_plot
 
 def update(frame):
@@ -163,6 +174,11 @@ def update(frame):
     p_pred_plot.set_data(p_field_pred_history[frame])
     u_actual_plot.set_data(u_norm_history[frame])
     p_actual_plot.set_data(p_field_history[frame])
+    loss_plot.set_data(epochs_per_frame * np.arange(0, frame), loss_history[:frame])
+    if frame > 0:
+        ax[2][0].set_xlim(0, epochs_per_frame * frame)
+        ax[2][0].set_ylim(min(loss_history[:frame]), max(loss_history[:frame]))
+    fig.suptitle('epochs=' + str(frame * epochs_per_frame))
     return u_pred_plot, u_actual_plot, p_pred_plot, p_actual_plot
 
 def create_animation(save=False, filename='pinn_ns_result.gif'):
