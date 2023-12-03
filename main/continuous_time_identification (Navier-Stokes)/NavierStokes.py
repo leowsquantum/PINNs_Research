@@ -17,13 +17,14 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from plotting import newfig, savefig
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.gridspec as gridspec
+import my_utils_1
 
 np.random.seed(1234)
 tf.set_random_seed(1234)
 
 class PhysicsInformedNN:
     # Initialize the class
-    def __init__(self, x, y, t, u, v, layers):
+    def __init__(self, x, y, t, p, u, v, layers):
         
         X = np.concatenate([x, y, t], 1)
         
@@ -35,7 +36,8 @@ class PhysicsInformedNN:
         self.x = X[:,0:1]
         self.y = X[:,1:2]
         self.t = X[:,2:3]
-        
+
+        self.p = p
         self.u = u
         self.v = v
         
@@ -148,20 +150,31 @@ class PhysicsInformedNN:
 
         tf_dict = {self.x_tf: self.x, self.y_tf: self.y, self.t_tf: self.t,
                    self.u_tf: self.u, self.v_tf: self.v}
+
+        x_, y_, t_, p_, ux_, uy_ = my_utils_1.load_data(0)
         
         start_time = time.time()
         for it in range(nIter):
             self.sess.run(self.train_op_Adam, tf_dict)
-            
             # Print
-            if it % 10 == 0:
+            if it % 100 == 0:
                 elapsed = time.time() - start_time
                 loss_value = self.sess.run(self.loss, tf_dict)
                 lambda_1_value = self.sess.run(self.lambda_1)
                 lambda_2_value = self.sess.run(self.lambda_2)
                 print('It: %d, Loss: %.3e, l1: %.3f, l2: %.5f, Time: %.2f' % 
                       (it, loss_value, lambda_1_value, lambda_2_value, elapsed))
+                # u_pred, v_pred, p_pred = self.predict(self.x, self.y, self.t)
+                u_pred, v_pred, p_pred = self.predict(x_.reshape(-1, 1), y_.reshape(-1, 1), t_.reshape(-1, 1))
+                # p_field, p_field_pred, u_norm, u_norm_pred = my_utils_1.transform_data(self.x.flatten(), self.y.flatten(), self.t.flatten(), self.p.flatten(), self.u.flatten(), self.v.flatten(), p_pred.flatten(), u_pred.flatten(), v_pred.flatten())
+                p_field, p_field_pred, u_norm, u_norm_pred = my_utils_1.transform_data(x_, y_, t_, p_, ux_, uy_, p_pred, u_pred, v_pred)
+                my_utils_1.update_plot(p_field, p_field_pred, u_norm, u_norm_pred)
                 start_time = time.time()
+            if it % 1000 == 0:
+                my_utils_1.create_animation(save=True, filename=f'pinn_ns_results/pinn_ns_result_{it}.gif')
+
+
+
             
         self.optimizer.minimize(self.sess,
                                 feed_dict = tf_dict,
@@ -249,9 +262,10 @@ if __name__ == "__main__":
     t_train = t[idx,:]
     u_train = u[idx,:]
     v_train = v[idx,:]
+    p_train = p[idx,:]
 
     # Training
-    model = PhysicsInformedNN(x_train, y_train, t_train, u_train, v_train, layers)
+    model = PhysicsInformedNN(x_train, y_train, t_train, p_train, u_train, v_train, layers)
     model.train(200000)
     
     # Test Data
@@ -309,10 +323,11 @@ if __name__ == "__main__":
     ######################################################################
     noise = 0.01        
     u_train = u_train + noise*np.std(u_train)*np.random.randn(u_train.shape[0], u_train.shape[1])
-    v_train = v_train + noise*np.std(v_train)*np.random.randn(v_train.shape[0], v_train.shape[1])    
+    v_train = v_train + noise*np.std(v_train)*np.random.randn(v_train.shape[0], v_train.shape[1])
+    p_train = p_train + noise*np.std(p_train)*np.random.randn(p_train.shape[0], p_train.shape[1])
 
     # Training
-    model = PhysicsInformedNN(x_train, y_train, t_train, u_train, v_train, layers)
+    model = PhysicsInformedNN(x_train, y_train, t_train, p_train, u_train, v_train, layers)
     model.train(200000)
         
     lambda_1_value_noisy = model.sess.run(model.lambda_1)
