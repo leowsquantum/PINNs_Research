@@ -15,13 +15,10 @@ import scipy.io
 from scipy.interpolate import griddata
 import time
 from itertools import product, combinations
-from mpl_toolkits.mplot3d import Axes3D
-from mpl_toolkits.mplot3d.art3d import Poly3DCollection
-from plotting import newfig, savefig
+from plotting import newfig
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.gridspec as gridspec
 import my_utils_1
-import pickle
 import pandas as pd
 
 np.random.seed(1234)
@@ -86,6 +83,7 @@ class PhysicsInformedNN:
 
         init = tf.global_variables_initializer()
         self.sess.run(init)
+        self.saver = tf.train.Saver()
 
     def initialize_NN(self, layers):
         weights = []
@@ -160,6 +158,8 @@ class PhysicsInformedNN:
         p_field_pred_history = []
         u_norm_pred_history = []
         loss_history = []
+        lambda_1_history = []
+        lambda_2_history = []
         start_time = time.time()
         for it in range(nIter):
             self.sess.run(self.train_op_Adam, tf_dict)
@@ -176,12 +176,15 @@ class PhysicsInformedNN:
                 p_field_pred_history.append(p_field_pred)
                 u_norm_pred_history.append(u_norm_pred)
                 loss_history.append(loss_value)
+                lambda_1_history.append(lambda_1_value)
+                lambda_2_history.append(lambda_2_value)
                 my_utils_1.update_plot(p_field, p_field_pred, u_norm, u_norm_pred, loss_value, it % 1000 == 0)
                 start_time = time.time()
             if it % 1000 == 0:
-                with open(f'./pinn_ns_results/pinn_ns_result_{it}.pickle', 'wb') as f:
-                    pickle.dump(pd.DataFrame({'p_pred':p_field_pred_history, 'u_norm_pred':u_norm_pred_history, 'loss':loss_history}), f)
+                (pd.DataFrame({'p_pred':p_field_pred_history, 'u_norm_pred':u_norm_pred_history, 'loss':loss_history})
+                 .to_pickle(f'./pinn_ns_results/pinn_ns_result_{it}.pickle'))
                 my_utils_1.create_animation(save=True, filename=f'./pinn_ns_results/pinn_ns_result_{it}.gif')
+                self.save_model(f'./pinn_ns_results/pinn_ns_model_{it}.ckpt')
 
 
 
@@ -191,6 +194,11 @@ class PhysicsInformedNN:
                                 fetches = [self.loss, self.lambda_1, self.lambda_2],
                                 loss_callback = self.callback)
 
+    def save_model(self, model_path):
+        self.saver.save(self.sess, model_path)
+
+    def load_model(self, model_path):
+        self.saver.restore(self.sess, model_path)
 
     def predict(self, x_star, y_star, t_star):
 
@@ -231,7 +239,7 @@ def axisEqual3D(ax):
 if __name__ == "__main__":
 
 
-    N_train = 5000
+    N_train = 5000  # 5000
 
     layers = [3, 20, 20, 20, 20, 20, 20, 20, 20, 2]
 
@@ -277,7 +285,7 @@ if __name__ == "__main__":
 
     # Training
     model = PhysicsInformedNN(x_train, y_train, t_train, p_train, u_train, v_train, layers)
-    model.train(200000)
+    model.train(20000)
 
     # Test Data
     snap = np.array([100])
