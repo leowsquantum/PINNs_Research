@@ -9,6 +9,7 @@ import sys
 sys.path.insert(0, '../../Utilities/')
 
 import tensorflow as tf
+tf.logging.set_verbosity(tf.logging.ERROR)
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.io
@@ -178,9 +179,9 @@ class PhysicsInformedNN:
                 loss_history.append(loss_value)
                 lambda_1_history.append(lambda_1_value)
                 lambda_2_history.append(lambda_2_value)
-                my_utils_1.update_plot(p_field, p_field_pred, u_norm, u_norm_pred, loss_value, it % 1000 == 0)
+                my_utils_1.update_plot(p_field, p_field_pred, u_norm, u_norm_pred, loss_value, it % 20000 == 0)
                 start_time = time.time()
-            if it % 1000 == 0:
+            if it % 20000 == 0:
                 (pd.DataFrame({'p_pred':p_field_pred_history, 'u_norm_pred':u_norm_pred_history, 'loss':loss_history})
                  .to_pickle(f'./pinn_ns_results/pinn_ns_result_{it}.pickle'))
                 my_utils_1.create_animation(save=True, filename=f'./pinn_ns_results/pinn_ns_result_{it}.gif')
@@ -210,7 +211,7 @@ class PhysicsInformedNN:
 
         return u_star, v_star, p_star
 
-def plot_solution(X_star, u_star, index):
+def plot_solution(X_star, u_sta0r, index):
 
     lb = X_star.min(0)
     ub = X_star.max(0)
@@ -239,7 +240,7 @@ def axisEqual3D(ax):
 if __name__ == "__main__":
 
 
-    N_train = 5000  # 5000
+    N_train = 200  # 5000
 
     layers = [3, 20, 20, 20, 20, 20, 20, 20, 20, 2]
 
@@ -285,7 +286,9 @@ if __name__ == "__main__":
 
     # Training
     model = PhysicsInformedNN(x_train, y_train, t_train, p_train, u_train, v_train, layers)
-    model.train(20000)
+    model.train(20001)
+
+    exit()
 
     # Test Data
     snap = np.array([100])

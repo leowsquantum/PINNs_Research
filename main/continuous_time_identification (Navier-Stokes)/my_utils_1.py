@@ -125,20 +125,20 @@ u_norm_pred_history = []
 loss_history = []
 epochs_per_frame = 100
 
-fig, ax = plt.subplots(3, 2, figsize=(10, 10))
-u_pred_plot = ax[0][0].imshow(u_norm)  # u_norm_pred
-ax[0][0].set_title('predicted velocity at t=0')
-p_pred_plot = ax[1][0].imshow(p_field)  # p_field_pred
-ax[1][0].set_title('predicted pressure at t=0')
-u_actual_plot = ax[0][1].imshow(u_norm)
-ax[0][1].set_title('actual velocity at t=0')
-p_actual_plot = ax[1][1].imshow(p_field)
-ax[1][1].set_title('actual pressure at t=0')
-loss_plot, = ax[2][0].plot(loss_history)
-ax[2][0].set_yscale('log')
-ax[2][0].set_title('loss')
-ax[2][0].set_xlabel('epochs')
-ax[2][0].set_ylabel('loss')
+# fig, ax = plt.subplots(3, 2, figsize=(10, 10))
+# u_pred_plot = ax[0][0].imshow(u_norm)  # u_norm_pred
+# ax[0][0].set_title('predicted velocity at t=0')
+# p_pred_plot = ax[1][0].imshow(p_field)  # p_field_pred
+# ax[1][0].set_title('predicted pressure at t=0')
+# u_actual_plot = ax[0][1].imshow(u_norm)
+# ax[0][1].set_title('actual velocity at t=0')
+# p_actual_plot = ax[1][1].imshow(p_field)
+# ax[1][1].set_title('actual pressure at t=0')
+# loss_plot, = ax[2][0].plot(loss_history)
+# ax[2][0].set_yscale('log')
+# ax[2][0].set_title('loss')
+# ax[2][0].set_xlabel('epochs')
+# ax[2][0].set_ylabel('loss')
 
 def update_plot(p_field, p_field_pred, u_norm, u_norm_pred, loss, plot=False):
     p_field_history.append(p_field)
