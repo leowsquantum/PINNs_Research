@@ -16,16 +16,19 @@ print(normalization_constants)
 p_field_preds = [p_field_preds[i] - normalization_constants[i] for i in range(len(ns_samples))]
 u_norm_losses = []
 p_losses = []
+
 for i in range(len(ns_samples)):
-    u_norm_losses.append(np.mean((u_norm_preds[i] - u_norm) ** 2))
-    p_losses.append(np.mean((p_field_preds[i] - p_field) ** 2))
+    u_norm_losses.append(np.mean(np.abs(u_norm_preds[i] - u_norm) / np.abs(u_norm)))
+    p_losses.append(np.mean(np.abs(p_field_preds[i] - p_field) / np.abs(p_field)))
 plt.plot(u_norm_losses)
 plt.xticks(np.arange(0, len(ns_samples)), [str(n) for n in ns_samples])
-plt.yscale('log')
+# plt.yscale('log')
 plt.xlabel('Number of samples')
-plt.ylabel('Velocity Norm MSE')
+plt.ylabel('Numerical error of velocity norm')
 plt.show()
 plt.plot(p_losses)
-plt.ylabel('Pressure MSE')
+plt.xticks(np.arange(0, len(ns_samples)), [str(n) for n in ns_samples])
+# plt.yscale('log')
+plt.xlabel('Number of samples')
+plt.ylabel('Numerical error of pressure')
 plt.show()
-

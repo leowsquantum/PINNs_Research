@@ -76,7 +76,7 @@ for n in ns_samples:
     print('n_sample: ', n)
     model_path = f'./pinn_ns_results/n_sample_{n}/pinn_ns_model_20000.ckpt'
     models.append(get_model(model_path))
-x_, y_, t_, p_, u_, v_ = my_utils_1.load_data()
+x_, y_, t_, p_, u_, v_ = my_utils_1.load_data(50)
 x_, y_, t_ = x_.reshape(-1, 1), y_.reshape(-1, 1), t_.reshape(-1, 1)
 p_, u_, v_ = p_.reshape(-1, 1), u_.reshape(-1, 1), v_.reshape(-1, 1)
 uvp_preds = np.array([model.predict(x_, y_, t_) for model in models])  # (n_sample, 3, x*y, 1)
